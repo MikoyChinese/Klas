@@ -14,16 +14,19 @@ class PaymentSystem_klas(QObject):
         # Parent and self object init.
         super(PaymentSystem_klas, self).__init__()
 
-        # Start to logging:
+        # 1.Start to logging:
         self.mylogging = MyLogging(logger_name='user')
         self.mylogger = self.mylogging.logger
 
-        # Read configuration of <Config.cfg> Payment Software.
+        # 2.Read configuration of <Config.cfg> Payment Software.
         self.basic = Config(cfg_path='Config.cfg')
+        # Please don't edit this confile, it's created by <Config Class>
         self.config = self.basic.out_config()
 
-        #
-        self.cam_user = Device.BaseCamera(cam_name=self.config['cam_user'])
-        self.cam_item = Device.BaseCamera(cam_name=self.config['cam_item'])
-        self.weigher = Device.Weigher(**self.config['weigher'])
-        self.door_controller = Device.Weigher(**self.config['door_controller'])
+        # 3.Device Self Check.
+
+        # 4.Initialize Device.
+        self.cam_user = Device.BaseCamera(cam_name='cam_user')
+        self.cam_item = Device.BaseCamera(cam_name='cam_item')
+        self.weigher = Device.Weigher(port_name='weigher')
+        self.door_controller = Device.Weigher(port_name='door_controller')

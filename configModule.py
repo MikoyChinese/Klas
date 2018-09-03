@@ -3,7 +3,7 @@
 Configure file of Payment software.
 """
 
-import configparser, sys, os, json
+import configparser, sys, json, os
 from UserGuide import UserGuide
 from loggingModule import MyLogging
 
@@ -79,14 +79,18 @@ class Config(BaseConfig):
             for cam in cam_object:
                 config[cam]['cam_path'] = config[cam]['cam_num']
         # Creat config file in ./config/config.ini
+
         dir_path = os.path.join(os.path.dirname(__file__), 'config')
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
             self.mylogger.info("Create a Folder: %s" % dir_path)
         file = os.path.join(dir_path, 'config.ini')
         with open(file, 'w') as f:
-            f.write(str(config))
-            self.mylogger.info('Create a New Config to ./config/config.ini!')
+            f.write(json.dumps(config, sort_keys=True, indent=4,
+                               separators=(',', ':'), ensure_ascii=False))
+
+        self.mylogger.info('Create a New Config to ./config/config.ini!')
+
         return config
 
     @property

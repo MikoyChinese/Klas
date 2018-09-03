@@ -9,27 +9,36 @@ Devices:
         - weigher: [port_name] [baud_rate] [data_bits][stop_bits]
         - door_controller: [port_name] [baud_rate] [data_bits][stop_bits]
 """
-import cv2, struct
+import cv2, struct, json
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtCore import QByteArray, pyqtSignal, QIODevice, pyqtSlot
 from loggingModule import MyLogging
 from functools import wraps
 
 
+# 读取固定地址的配置，此固定配置是基于Config.cfg 自动生成.
+def read_config(cfg_path='./config/config.ini'):
+    with open(cfg_path, 'r') as f:
+        config = json.loads(f.read(), encoding='utf-8')
+    return config
+
+
 class BaseCamera():
     # The basic Camera Class.
     def __init__(self, cam_name=None):
         self.cam_name = cam_name
-        self.cam_path = self.cam_name['cam_path']
-        self.width = int(self.cam_name['width'])
-        self.height = int(self.cam_name['height'])
+        config = read_config()[self.cam_name]
+        self.cam_path = config['cam_path']
+        self.width = int(config['width'])
+        self.height = int(config['height'])
 
         self.capture = cv2.VideoCapture(self.cam_path)
         self.capture.set(3, self.width)
         self.capture.set(4, self.height)
 
         # Logging info
-        MyLogging(logger_name='user').logger.info('%s Finished Initializing.' % self.cam_path)
+        MyLogging(logger_name='user').logger.info('[%s] Finished '
+                                                  'Initializing.' % self.cam_name)
 
     def read(self):
         _, img = self.capture.read()
@@ -39,16 +48,21 @@ class BaseCamera():
         # Check the Camera whether it is available.
         return self.capture.isOpened()
 
+    def get_config(self):
+        config = '[cam_path]: %s, [width]: %s, [height]: %s'\
+                 %(self.cam_path, self.width, self.height)
+        return config
 
 # Weigher Class
 class Weigher():
-    def __init__(self, port_name=None, baud_rate=None, data_bits=None,
-                 stop_bits=None):
+    def __init__(self, port_name=None, baud_rate=None,
+                 data_bits=None, stop_bits=None):
         # Read config
-        self.port_name = port_name
-        self.baud_rate = baud_rate
-        self.data_bits = data_bits
-        self.stop_bits = stop_bits
+        config = read_config()[port_name]
+        self.port_name = config['port_name']
+        self.baud_rate = config['baud_rate']
+        self.data_bits = config['data_bits']
+        self.stop_bits = config['stop_bits']
 
         # Initial
         self.weigher = QSerialPort()  # It is the subclass of the QIODevice class;
@@ -98,15 +112,17 @@ class Door():
 
     def __init__(self, port_name=None, baud_rate=None, data_bits=None,
                  stop_bits=None):
+        # Reading config
+        config = read_config()[port_name]
         # Logging module
         self.mylogging = MyLogging(logger_name='user')
         self.mylogger = self.mylogging.logger
         # Configurate door_controller.
         self.door_controller = QSerialPort()
-        self.door_controller.setPortName(port_name)
-        self.door_controller.setBaudRate(baud_rate)
-        self.door_controller.setDataBits(data_bits)
-        self.door_controller.setStopBits(stop_bits)
+        self.door_controller.setPortName(config['port_name'])
+        self.door_controller.setBaudRate(int(config['baud_rate']))
+        self.door_controller.setDataBits(int(config['data_bits']))
+        self.door_controller.setStopBits(int(config['stop_bits']))
         # Check self.
         self.check()
         # Start to work.
